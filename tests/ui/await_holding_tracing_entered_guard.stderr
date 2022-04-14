@@ -1,0 +1,101 @@
+error: this `Entered` held across an `await` point. To watch the runtime of a future, use `.instrument(span)`
+  --> $DIR/await_holding_tracing_entered_guard.rs:6:9
+   |
+LL |     let _guard = span.enter();
+   |         ^^^^^^
+   |
+   = note: `-D clippy::await-holding-tracing-entered-guard` implied by `-D warnings`
+   = help: if you intend to create a span around a synchronous operation
+note: these are all the `await` points this reference is held through
+  --> $DIR/await_holding_tracing_entered_guard.rs:6:5
+   |
+LL | /     let _guard = span.enter();
+LL | |     baz().await
+LL | | }
+   | |_^
+
+error: this `Entered` held across an `await` point. To watch the runtime of a future, use `.instrument(span)`
+  --> $DIR/await_holding_tracing_entered_guard.rs:11:9
+   |
+LL |     let _guard = span.enter();
+   |         ^^^^^^
+   |
+   = help: if you intend to create a span around a synchronous operation
+note: these are all the `await` points this reference is held through
+  --> $DIR/await_holding_tracing_entered_guard.rs:11:5
+   |
+LL | /     let _guard = span.enter();
+LL | |     baz().await
+LL | | }
+   | |_^
+
+error: this `Entered` held across an `await` point. To watch the runtime of a future, use `.instrument(span)`
+  --> $DIR/await_holding_tracing_entered_guard.rs:32:9
+   |
+LL |     let _guard = span.enter();
+   |         ^^^^^^
+   |
+   = help: if you intend to create a span around a synchronous operation
+note: these are all the `await` points this reference is held through
+  --> $DIR/await_holding_tracing_entered_guard.rs:32:5
+   |
+LL | /     let _guard = span.enter();
+LL | |
+LL | |     let second = baz().await;
+LL | |
+...  |
+LL | |     first + second + third
+LL | | }
+   | |_^
+
+error: this `Entered` held across an `await` point. To watch the runtime of a future, use `.instrument(span)`
+  --> $DIR/await_holding_tracing_entered_guard.rs:44:9
+   |
+LL |     let _guard = span.enter();
+   |         ^^^^^^
+   |
+   = help: if you intend to create a span around a synchronous operation
+note: these are all the `await` points this reference is held through
+  --> $DIR/await_holding_tracing_entered_guard.rs:44:5
+   |
+LL | /     let _guard = span.enter();
+LL | |
+LL | |     let second = baz().await;
+LL | |
+...  |
+LL | |     first + second + third
+LL | | }
+   | |_^
+
+error: this `Entered` held across an `await` point. To watch the runtime of a future, use `.instrument(span)`
+  --> $DIR/await_holding_tracing_entered_guard.rs:59:13
+   |
+LL |         let _guard = span.enter();
+   |             ^^^^^^
+   |
+   = help: if you intend to create a span around a synchronous operation
+note: these are all the `await` points this reference is held through
+  --> $DIR/await_holding_tracing_entered_guard.rs:59:9
+   |
+LL | /         let _guard = span.enter();
+LL | |         baz().await
+LL | |     };
+   | |_____^
+
+error: this `Entered` held across an `await` point. To watch the runtime of a future, use `.instrument(span)`
+  --> $DIR/await_holding_tracing_entered_guard.rs:71:13
+   |
+LL |         let _guard = span.enter();
+   |             ^^^^^^
+   |
+   = help: if you intend to create a span around a synchronous operation
+note: these are all the `await` points this reference is held through
+  --> $DIR/await_holding_tracing_entered_guard.rs:71:9
+   |
+LL | /         let _guard = span.enter();
+LL | |         baz().await
+LL | |     }
+   | |_____^
+
+error: aborting due to 6 previous errors
+

@@ -127,7 +127,53 @@ declare_clippy_lint! {
     "inside an async function, holding a `RefCell` ref while calling `await`"
 }
 
-declare_lint_pass!(AwaitHolding => [AWAIT_HOLDING_LOCK, AWAIT_HOLDING_REFCELL_REF]);
+declare_clippy_lint! {
+    /// ### What it does
+    /// Checks for calls to await while holding a `tracing::span::Entered` or
+    /// `tracing::span::EnteredSpan`.
+    ///
+    /// ### Why is this bad?
+    /// The guards returned from `tracing::Span::enter` and
+    /// `tracing::span::entered` are not safe to hold across await points. They
+    /// rely on thread locals and holding them across an await point will result
+    /// in incorrect span data.
+    ///
+    /// See [crate
+    /// documentation](https://docs.rs/tracing/0.1.34/tracing/struct.Span.html#in-asynchronous-code)
+    /// for more information.
+    ///
+    /// ### Known problems
+    ///
+    /// ### Example
+    /// ```rust
+    /// # use tracing::info_span;
+    /// # async fn baz() {}
+    /// async fn foo() {
+    ///   let _entered = info_span!("baz").entered();
+    ///   baz().await;
+    /// }
+    /// ```
+    ///
+    /// Use instead:
+    /// ```rust
+    /// # use tracing::info_span;
+    /// # async fn baz() {}
+    /// # fn some_operation() {}
+    /// async fn foo() {
+    ///   {
+    ///      let _entered = info_span!("some_operation");
+    ///      some_operation();
+    ///   } // _entered dropped here at end of scope
+    ///   baz().await;
+    /// }
+    /// ```
+    #[clippy::version = "1.49.0"]
+    pub AWAIT_HOLDING_TRACING_ENTERED_GUARD,
+    suspicious,
+    "inside an async function, holding a `tracing::span::Entered` across an await point"
+}
+
+declare_lint_pass!(AwaitHolding => [AWAIT_HOLDING_LOCK, AWAIT_HOLDING_REFCELL_REF, AWAIT_HOLDING_TRACING_ENTERED_GUARD]);
 
 impl LateLintPass<'_> for AwaitHolding {
     fn check_body(&mut self, cx: &LateContext<'_>, body: &'_ Body<'_>) {
@@ -182,8 +228,28 @@ fn check_interior_types(cx: &LateContext<'_>, ty_causes: &[GeneratorInteriorType
                     },
                 );
             }
+            if is_tracing_entered_guard(cx, adt.did()) {
+                span_lint_and_then(
+                    cx,
+                    AWAIT_HOLDING_TRACING_ENTERED_GUARD,
+                    ty_cause.span,
+                    "this `Entered` held across an `await` point",
+                    |diag| {
+                        diag.help("To instrument a future, use `future.instrument(span).await`");
+                        diag.span_note(
+                            ty_cause.scope_span.unwrap_or(span),
+                            "these are all the `await` points this reference is held through",
+                        );
+                    },
+                )
+            }
         }
     }
+}
+
+fn is_tracing_entered_guard(cx: &LateContext<'_>, def_id: DefId) -> bool {
+    match_def_path(cx, def_id, &["tracing", "span", "Entered"])
+        || match_def_path(cx, def_id, &["tracing", "span", "EnteredSpan"])
 }
 
 fn is_mutex_guard(cx: &LateContext<'_>, def_id: DefId) -> bool {
